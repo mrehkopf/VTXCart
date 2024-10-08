@@ -232,8 +232,8 @@ ELFSIZE = $(SIZE) -x -A $(TARGET).elf
 # --gap-fill 0xff is important to match the padding values as they end up
 # in physical flash; CRC calculation is wrong otherwise.
 $(TARGET).bin: $(TARGET).elf
-	$(E) "  BIN $@"
-	$(Q)$(OBJCOPY) --gap-fill 0xff -O binary -R .fwhdr $< $@
+	$(E) "  BIN    $@"
+	$(Q)$(OBJCOPY) --gap-fill 0xff -O binary $< $@
 
 $(OBJDIR)/%.hex: $(OBJDIR)/%.elf
 	$(E) "  HEX    $@"
