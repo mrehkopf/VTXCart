@@ -225,7 +225,7 @@ sym: $(TARGET).sym
 
 
 # Display size of file.
-ELFSIZE = $(SIZE) -A $(TARGET).elf
+ELFSIZE = $(SIZE) -x -A $(TARGET).elf
 
 
 # Create final output files from ELF output file.
