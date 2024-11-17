@@ -223,6 +223,8 @@ eep: $(TARGET).eep
 lss: $(TARGET).lss
 sym: $(TARGET).sym
 
+program: build
+	dfu-util -a0 -d 0483:df11 -s 0x8000000 -D $(TARGET).bin
 
 # Display size of file.
 ELFSIZE = $(SIZE) -x -A $(TARGET).elf
