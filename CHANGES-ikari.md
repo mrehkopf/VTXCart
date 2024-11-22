@@ -81,7 +81,7 @@ Get a **4.7MΩ - 5.2MΩ 0402 SMD resistor** and solder it **piggyback on top of 
 The picture shows some alternative points to solder to in case a 0402 resistor isn't available or difficult to solder. Make sure to connect one end of your resistor to any of the orange points, and the other end to any of the cyan points.
 I only had a 0603 resistor handy so I soldered the left side to pin 5 of the voltage regulator instead. A wired resistor will also do the trick.
 
-Alternatively you can replace both R1 and R2 with a pair of resistors of the proper ratio (~68:15). Do not use small resistor values to avoid loading the power supply.
+Alternatively you can replace both R1 and R2 with a pair of resistors of the proper ratio (~4:1). Do not use small resistor values to avoid loading the power supply.
 
 | ![Closeup photo of the WeAct STM32H750 board's 3.3V regulator showing points where to solder the additional resistor](Docs/CV-Mod-ikari/WeAct-Resistor-Mod.jpg) |
 |:--:|
