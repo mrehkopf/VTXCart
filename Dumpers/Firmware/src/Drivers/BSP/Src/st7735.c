@@ -716,7 +716,7 @@ int32_t ST7735_FillRGBRect(ST7735_Object_t *pObj, uint32_t Xpos, uint32_t Ypos, 
 {
   int32_t ret = ST7735_OK;
   uint8_t *rgb_data = pData;
-  uint32_t i, j;
+  uint32_t j;
 
   if (((Xpos + Width) > ST7735Ctx.Width) || ((Ypos + Height) > ST7735Ctx.Height))
   {
@@ -732,16 +732,11 @@ int32_t ST7735_FillRGBRect(ST7735_Object_t *pObj, uint32_t Xpos, uint32_t Ypos, 
       }
       else
       {
-        for (i = 0; i < Width; i++)
-        {
-          pdata[2U * i] = (uint8_t)(*(rgb_data));
-          pdata[(2U * i) + 1U] = (uint8_t)(*(rgb_data + 1));
-          rgb_data += 2;
-        }
-        if (st7735_send_data(&pObj->Ctx, (uint8_t *)&pdata[0], 2U * Width) != ST7735_OK)
+        if (st7735_send_data(&pObj->Ctx, rgb_data, 2U * Width) != ST7735_OK)
         {
           ret = ST7735_ERROR;
         }
+        rgb_data += 2U * Width;
       }
     }
   }

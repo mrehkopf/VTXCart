@@ -18,13 +18,13 @@ char SDPath[4];
 FATFS SDFatFs;
 
 // lcd
-uint8_t lcd_cache[2][LCD_WIDTH+2];
+char lcd_char_cache[LCD_LINES][LCD_COLS+2];
+uint8_t lcd_attr_cache[LCD_LINES][LCD_COLS+2];
 
-char video_mem[2][256];
-uint32_t video_attr[2];
-
-uint32_t scroll_pos[2];
-uint32_t scroll_delay[2];
+char video_buf[LCD_LINES*256];
+char *video_line[LCD_LINES];
+uint8_t video_attr_buf[LCD_LINES*256];
+uint8_t *video_attr[LCD_LINES];
 
 // uart
 uint8_t UARTTxBuffer[UART_BUFFER_SIZE] ALIGN(4);
@@ -34,10 +34,6 @@ uint32_t UARTTxBuffer_head, UARTTxBuffer_tail, UARTTxBuffer_len;
 uint32_t cur_menu = MENU_CSEL;
 uint32_t cur_chip = CHIP_P;
 uint32_t cur_mode = MODE_TEST;
-
-// timer
-uint32_t timLcdCnt;
-uint32_t timBtnCnt[BUTTONn];
 
 // dump buffer
 uint16_t buffer [BUFFER_SIZE] AXI_BUFFER;

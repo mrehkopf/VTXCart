@@ -81,7 +81,11 @@
 #define UART_BUFFER_SIZE 8192
 
 // lcd
-#define LCD_WIDTH 10
+#define LCD_COLS     20
+#define LCD_LINES    5
+#define FONT_HEIGHT  16
+#define FONT_WIDTH   8
+#define LCD_REFRESH_INTERVAL 3
 
 #define MENU_CSEL    0
 #define MENU_MSEL    1

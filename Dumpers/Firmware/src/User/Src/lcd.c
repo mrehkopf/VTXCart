@@ -1,5 +1,7 @@
 #include "main.h"
 #include "lcd.h"
+#include "font.h"
+#include "printf.h"
 
 // LCD_RS
 #define LCD_RS_SET HAL_GPIO_WritePin(LCD_WR_RS_GPIO_PORT, LCD_WR_RS_PIN, GPIO_PIN_SET)
@@ -19,6 +21,29 @@ static int32_t lcd_writereg(uint8_t reg, uint8_t *pdata, uint32_t length);
 static int32_t lcd_readreg(uint8_t reg, uint8_t *pdata);
 static int32_t lcd_senddata(uint8_t *pdata, uint32_t length);
 static int32_t lcd_recvdata(uint8_t *pdata, uint32_t length);
+
+int cur_x = 0, cur_y = 0, cur_color = 0;
+
+const uint16_t lcd_palette[4][16] = {
+    // 444 ref:
+    //  0x0000, 0x0f88, 0x0c66, 0x0944, 0x0633, 0x0311, 0x0100, 0x0000
+    { // normal text
+        0x0000, 0xffff, 0x79ce, 0xd39c, 0x2c63, 0x8631, 0x8210, 0x0000,
+        0xffe0, 0xffe0, 0xffe0, 0xffe0, 0xffe0, 0xffe0, 0xffe0, 0xffe0
+    },
+    { // sad text (red)
+        0x0000, 0x51fc, 0x2ccb, 0x289a, 0x8661, 0x8230, 0x0010, 0x0000,
+        0xffe0, 0xffe0, 0xffe0, 0xffe0, 0xffe0, 0xffe0, 0xffe0, 0xffe0
+    },
+    { // happy text (green)
+        0x0000, 0xf18f, 0x6c66, 0xc844, 0x2633, 0x8211, 0x8000, 0x0000,
+        0xffe0, 0xffe0, 0xffe0, 0xffe0, 0xffe0, 0xffe0, 0xffe0, 0xffe0
+    },
+    { // so-so text (yellow)
+        0x0000, 0xf1ff, 0x6cce, 0xc89c, 0x2663, 0x8231, 0x8010, 0x0000,
+        0xffe0, 0xffe0, 0xffe0, 0xffe0, 0xffe0, 0xffe0, 0xffe0, 0xffe0
+    }
+};
 
 ST7735_IO_t st7735_pIO = {
 	lcd_init,
@@ -126,198 +151,146 @@ extern const uint16_t font32 [];
 uint16_t lcd_buf[FONT_WIDTH*FONT_HEIGHT] ALIGN(4);
 uint8_t prev_lm, prev_attr[2];
 
-void LCD_ShowChar(uint16_t x, uint16_t y, uint8_t num)
+void LCD_ShowChar(uint16_t x, uint16_t y, uint8_t num, uint8_t pal)
 {
-    uint16_t temp;
-	uint8_t  xx, yy;
-    uint16_t ix = 0;
+    uint8_t  xl, yl;
+    uint32_t pixbuf;
+    uint32_t src_addr;
+    uint16_t tgt_addr = 0;
+
+    int shift = 0; // shift / bit buffer fill
 
     if ((num < 0x20) || (num > 0x7f)) return;
-	num -= 0x20;
-
-	for (yy = 0; yy < 32; yy++)
-	{
-        temp = font32[num * 32 + yy];
-
-		for (xx = 0; xx < 16; xx++)
-		{
-			if (temp & 0x8000)
-                lcd_buf[ix++] = 0xFFFF;
-			else
-                lcd_buf[ix++] = 0x0000;
-
-			temp <<= 1;
-		}
-	}
-	ST7735_FillRGBRect(&st7735_pObj, x, y, (uint8_t *)&lcd_buf, 16, 32);
-}
-
-void LCD_ShowString(uint16_t x, uint16_t y, uint8_t *p)
-{
-	while ((*p <= 0x7f) && (*p >= 0x20))
-	{
-		LCD_ShowChar(x, y, *p++);
-		x += 16;
-	}
+    num -= 0x20;
+    src_addr = num * FONT_WIDTH * FONT_HEIGHT / 2;
+    for (yl = 0; yl < FONT_HEIGHT; yl++)
+    {
+        for (xl = 0; xl < FONT_WIDTH; xl++)
+        {
+            if(shift == 0) {
+                pixbuf = font_src[src_addr++];
+                shift = 8;
+            }
+            lcd_buf[tgt_addr++] = lcd_palette[pal][pixbuf & 0xf];
+            pixbuf >>= 4;
+            shift -= 4;
+        }
+    }
+    ST7735_FillRGBRect(&st7735_pObj, x, y, (uint8_t *)&lcd_buf, FONT_WIDTH, FONT_HEIGHT);
 }
 
 void LCD_Clear(void)
 {
+    memset(video_buf, 0x20, sizeof(video_buf));
+    memset(video_attr_buf, 0, sizeof(video_attr_buf));
+    memset(lcd_char_cache, 0x20, sizeof(lcd_char_cache));
+    memset(lcd_attr_cache, 0, sizeof(lcd_attr_cache));
     ST7735_FillRect(&st7735_pObj, 0, 0, 160, 80, 0x0000);
-    memset(lcd_cache, 0x20, sizeof(lcd_cache));
-    scroll_delay[0] = scroll_delay[1] = 0;
-    scroll_pos[0]   = scroll_pos[1] = 0;
+    cur_x = 0;
+    cur_y = 0;
 }
 
 void LCD_Init(void)
 {
-	ST7735Ctx.Orientation = ST7735_ORIENTATION_LANDSCAPE_ROT180;
-	ST7735Ctx.Panel = HannStar_Panel;
-	ST7735Ctx.Type = ST7735_0_9_inch_screen;
-	ST7735_RegisterBusIO(&st7735_pObj, &st7735_pIO);
-	ST7735_LCD_Driver.Init(&st7735_pObj, ST7735_FORMAT_RBG565, &ST7735Ctx);
+    ST7735Ctx.Orientation = ST7735_ORIENTATION_LANDSCAPE_ROT180;
+    ST7735Ctx.Panel = HannStar_Panel;
+    ST7735Ctx.Type = ST7735_0_9_inch_screen;
+    ST7735_RegisterBusIO(&st7735_pObj, &st7735_pIO);
+    ST7735_LCD_Driver.Init(&st7735_pObj, ST7735_FORMAT_RBG565, &ST7735Ctx);
+    for(int i = 0; i < LCD_LINES; i++) {
+        video_line[i] = video_buf + 256 * i;
+        video_attr[i] = video_attr_buf + 256 * i;
+    }
+//    LCD_Generate_Font(font, font_src, FONT_WIDTH, FONT_HEIGHT);
 }
 
-void LCD_Draw(void)
+void LCD_UpdateText(void)
 {
-  uint8_t i, f, ln, lm, xx, yy, ch;
+  int x = 0, y = 0;
+//  if (f) LCD_Clear();
 
-  if (strlen (video_mem[1])) {
-    lm = 2;
-    yy  = 8;
-  } else {
-    lm = 1;
-    yy  = 24;
-  }
-
-  f = 0;
-  if (prev_lm != lm) f = 1;
-  if (prev_attr[0] != video_attr[0]) f = 1;
-  if (prev_attr[1] != video_attr[1]) f = 1;
-  prev_lm = lm;
-  prev_attr[0] = video_attr[0];
-  prev_attr[1] = video_attr[1];
-  if (f) LCD_Clear();
-
-  for (ln = 0; ln < lm; ln++) {
-    if (strlen (video_mem[ln]) > LCD_WIDTH) {
-      
-      if (scroll_delay[ln])
-        scroll_delay[ln]--;
-      else {
-        if (++scroll_pos[ln] > strlen (video_mem[ln]))
-          scroll_pos[ln] = 0;
+  for (int line = 0; line < LCD_LINES; line++) {
+    x = 0;
+    for (int col = 0; col < LCD_COLS; col++) {
+      char ch = video_line[line][col];
+      uint8_t at = video_attr[line][col];
+      if (lcd_char_cache[line][col] != ch
+       || lcd_attr_cache[line][col] != at) {
+        lcd_char_cache[line][col] = ch;
+        lcd_attr_cache[line][col] = at;
+        LCD_ShowChar(x, y, ch, at);
       }
-
-      xx = 0;
-      f = 0;
-      for (i = 0; i < LCD_WIDTH; i++) {
-        if (!f) {
-          if (video_mem[ln][scroll_pos[ln] + i])
-            ch = video_mem[ln][scroll_pos[ln] + i];
-          else
-            f = 1;
-        }
-        if (f) {
-          if (f == 1)
-            ch = 0x20;
-          else
-            ch = video_mem[ln][f - 2];
-          f++;
-        }
-        if (lcd_cache[ln][i] != ch) {
-          lcd_cache[ln][i] = ch;
-          LCD_ShowChar(xx, ln ? 40 : yy, ch);
-        }
-        xx += 16;
-      }
+      x += FONT_WIDTH;
     }
-    else
-    {
-      xx  = (video_attr[ln] & 0x01) ? 80 - strlen (video_mem[ln]) * 8 : 0;
-      f = 0;
-      for (i = 0; i < LCD_WIDTH; i++) {
-        if (!f) {
-          if (video_mem[ln][i])
-            ch = video_mem[ln][i];
-          else
-            f = 1;
-        }
-        if (f) {
-          ch = 0x20;
-        }
-        if (lcd_cache[ln][i] != ch) {
-          lcd_cache[ln][i] = ch;
-          LCD_ShowChar(xx, ln ? 40 : yy, ch);
-        }
-        xx += 16;
-      }
-    }
+    y += FONT_HEIGHT;
   }
 }
 
-extern uint32_t address;
-extern uint32_t test;
-extern uint32_t error;
+void LCD_setcolor(int c) {
+    cur_color = c;
+}
 
-void doLCD(void)
-{
-  memset(video_mem, 0, sizeof(video_mem));
-  video_attr[0] = video_attr[1] = 0;
+void LCD_setattr(int x, int y, int c) {
+    cur_x = x;
+    cur_y = y;
+    LCD_setcolor(c);
+}
 
-  switch (cur_menu) {
-    case MENU_CSEL:
-      sprintf(video_mem[0], get_chip_name());
-      sprintf(video_mem[1], "VTX V%s", VERSION);
-      video_attr[0] = video_attr[1] = 1;
-      break;
-    case MENU_MSEL:
-      switch (cur_mode) {
-        case MODE_TEST:
-          sprintf(video_mem[0], "TEST");
-          break;
-        case MODE_DUMP:
-          sprintf(video_mem[0], "DUMP");
-          break;
-        case MODE_PROG:
-          sprintf(video_mem[0], "PROG");
-          break;
-        case MODE_VERI:
-          sprintf(video_mem[0], "VERI");
-          break;
-        default:
-          break;
-      }
-      sprintf(video_mem[1], get_chip_name());
-      video_attr[0] = video_attr[1] = 1;
-      break;
-    case MENU_TEST:
-      sprintf(video_mem[0], "E:%ld", error);
-      sprintf(video_mem[1], "T:%08lX", test);
-      break;
-    case MENU_DUMP:
-      sprintf(video_mem[0], "D:%02ld%% E:%ld", address / (get_end_address() / 100), error);
-      sprintf(video_mem[1], "A:%08lX", address);
-      break;
-    case MENU_PROG:
-      sprintf(video_mem[0], "P:%02ld%% E:%ld", address / (get_end_address() / 100), error);
-      sprintf(video_mem[1], "A:%08lX", address);
-      break;
-    case MENU_VERI:
-      sprintf(video_mem[0], "V:%02ld%% E:%ld", address / (get_end_address() / 100), error);
-      sprintf(video_mem[1], "A:%08lX", address);
-      break;
-    case MENU_DONE:
-      sprintf(video_mem[0], "DONE");
-      sprintf(video_mem[1], "%ld", error);
-      video_attr[0] = video_attr[1] = 1;
-      break;
-    case MENU_ERROR:
-      sprintf(video_mem[0], "ERROR");
-      sprintf(video_mem[1], "%ld", error);
-      video_attr[0] = video_attr[1] = 1;
-      break;
-    default:
-      break;
-  }
+void LCD_putc(char c) {
+    if (c == '\n') {
+        cur_y++;
+        cur_x = 0;
+    } else if (c == '\r') {
+        cur_x = 0;
+    } else {
+        /* line scroll on next output only to avoid constant empty line
+           at bottom of screen when using normal \n terminated printfs */
+        while(cur_y >= LCD_LINES) {
+            memset(video_line[0], ' ', LCD_COLS);
+            char *tmp_line = video_line[0];
+            uint8_t *tmp_attr = video_attr[0];
+            for(int i = 0; i < LCD_LINES - 1; i++) {
+                video_attr[i] = video_attr[i + 1];
+                video_line[i] = video_line[i + 1];
+            }
+            video_attr[LCD_LINES - 1] = tmp_attr;
+            video_line[LCD_LINES - 1] = tmp_line;
+            cur_y--;
+        }
+        video_attr[cur_y][cur_x] = cur_color;
+        video_line[cur_y][cur_x] = c;
+        cur_x++;
+    }
+}
+
+int LCD_vprintf(int c, char *format, va_list ap) {
+    int res;
+
+    LCD_setcolor(c);
+    res = vxprintf(LCD_putc, format, ap);
+    return res;
+}
+
+int LCD_printf(int c, char *format, ...) {
+    va_list ap;
+    int res;
+
+    LCD_setcolor(c);
+
+    va_start(ap, format);
+    res = vxprintf(LCD_putc, format, ap);
+    va_end(ap);
+    return res;
+}
+
+int LCD_xyprintf(int x, int y, int c, char *format, ...) {
+    va_list ap;
+    int res;
+
+    LCD_setattr(x, y, c);
+
+    va_start(ap, format);
+    res = vxprintf(LCD_putc, format, ap);
+    va_end(ap);
+    return res;
 }
