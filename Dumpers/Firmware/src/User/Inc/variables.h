@@ -48,6 +48,7 @@ extern uint32_t cur_mode;
 // timer
 extern uint32_t timLcdCnt;
 extern uint32_t timBtnCnt[BUTTONn];
+extern uint32_t ticks;
 
 // dump/flash sector buffer
 extern uint16_t buffer [BUFFER_SIZE] AXI_BUFFER;
