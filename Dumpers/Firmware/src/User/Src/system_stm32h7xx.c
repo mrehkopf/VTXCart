@@ -529,15 +529,14 @@ void Delay_Init(void)
 
 void Delay_us(uint32_t us) // microseconds
 {
-  uint32_t startTick = DWT->CYCCNT,
-  delayTicks = us * (SystemCoreClock/1000000);
-
-  while (DWT->CYCCNT - startTick < delayTicks);
+  uint32_t delayTicks = us * (SystemCoreClock/1000000);
+  DWT->CYCCNT = 0;
+  while (DWT->CYCCNT < delayTicks);
 }
 
 inline void Delay_cycles(uint32_t cyc)
 {
-  cyc += DWT->CYCCNT;
+  DWT->CYCCNT = 0;
   while (DWT->CYCCNT < cyc);
 }
 
