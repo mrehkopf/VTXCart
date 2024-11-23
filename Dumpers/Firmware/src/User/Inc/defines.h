@@ -112,7 +112,7 @@
 #define MODE_VERI    3
 
 // dump buffer
-#define BUFFER_SIZE 0x10000
+#define BUFFER_SIZE 0x40000
 
 #define ALIGN(x) __attribute__((aligned(x)))
 
