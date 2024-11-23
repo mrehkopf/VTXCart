@@ -62,7 +62,10 @@ extern uint32_t error;
 // flags
 extern uint32_t flg_test;
 extern uint32_t flg_seek;
-                        
+// scrable lookup tables
+extern uint16_t scramble_lookup[65536] D2SRAM_BUFFER;
+extern uint16_t addr_lookup[512];
+
 #ifdef __cplusplus
 }
 #endif

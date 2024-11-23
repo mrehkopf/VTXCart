@@ -48,3 +48,7 @@ uint32_t error;
 // flags
 uint32_t flg_test;
 uint32_t flg_seek;
+// scrable lookup tables
+uint16_t scramble_lookup[65536] D2SRAM_BUFFER;
+uint16_t addr_lookup[512];
+
