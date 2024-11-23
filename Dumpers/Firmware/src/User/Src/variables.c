@@ -51,6 +51,24 @@ uint32_t flg_seek;
 
 // timer
 uint32_t ticks;
+
+// chip names
+const char *CHIP_NAMES[] = {
+  CHIP_NAME_P,
+  CHIP_NAME_S,
+  CHIP_NAME_M,
+  CHIP_NAME_C,
+  CHIP_NAME_V
+};
+
+const char *DUMP_FILENAMES[] = {
+  DUMP_FILENAME_P,
+  DUMP_FILENAME_S,
+  DUMP_FILENAME_M,
+  DUMP_FILENAME_C,
+  DUMP_FILENAME_V
+};
+
 // scrable lookup tables
 uint16_t scramble_lookup[65536] D2SRAM_BUFFER;
 uint16_t addr_lookup[512];

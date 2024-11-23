@@ -5,36 +5,51 @@
  extern "C" {
 #endif
 
+#include <stdint.h>
+
+typedef enum {
+  CHIP_P = 0,
+  CHIP_S,
+  CHIP_M,
+  CHIP_C,
+  CHIP_V
+} chip_t;
+
+typedef struct Flash_ID {
+  uint16_t vendor_id;
+  uint16_t chip_id;
+} Flash_ID;
+
+#define PROG_SAVE_FILE  "prog.state"
+
 // de/scramble address
 //#define DE_SCRAMBLE_ADDR_P
 
 #define CHIP_NAME_P     "P-ROM"
-#define DUMP_FILENAME_P "prom.bin"
+#define DUMP_FILENAME_P "prom.dump"
 #define PROG_FILENAME_P "prom"
 #define END_ADDRESS_P   (0x8000000 / 2) // 128 meg
 
 #define CHIP_NAME_S     "S-ROM"
-#define DUMP_FILENAME_S "srom.bin"
+#define DUMP_FILENAME_S "srom.dump"
 #define PROG_FILENAME_S "srom"
 //#define END_ADDRESS_S   (0x2000000 / 2) // 32 meg
 #define END_ADDRESS_S   (0x4000000 / 2) // 64 meg
 
 #define CHIP_NAME_M     "M-ROM"
-#define DUMP_FILENAME_M "mrom.bin"
+#define DUMP_FILENAME_M "mrom.dump"
 #define PROG_FILENAME_M "mrom"
 #define END_ADDRESS_M   (0x4000000 / 2) // 64 meg
 
 #define CHIP_NAME_C     "C-ROM"
-#define DUMP_FILENAME_C "crom.bin"
-#define PROG_FILENAME_C "crom"
+#define DUMP_FILENAME_C "crom.dump"
 #define END_ADDRESS_C   (0x40000000 / 4) // 1 gig
 
 #define CHIP_NAME_V     "V-ROM"
-#define DUMP_FILENAME_V "vrom.bin"
-#define PROG_FILENAME_V "vrom"
+#define DUMP_FILENAME_V "vrom.dump"
 #define END_ADDRESS_V   (0x40000000 / 4) // 1 gig
 
-#define VERSION "1"
+#define VERSION "2"
 
 //#define DEBUG_PRINT(...) do{ UART_printf( __VA_ARGS__ ); } while( 0 )
 //#define DEBUG_PRINT(...) do{ USB_printf( __VA_ARGS__ ); } while( 0 )
