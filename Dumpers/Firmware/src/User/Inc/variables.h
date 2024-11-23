@@ -10,7 +10,7 @@ extern UART_HandleTypeDef huart3;
 extern SPI_HandleTypeDef hspi4;
 extern SD_HandleTypeDef hsd1;
 extern PCD_HandleTypeDef hpcd_USB_OTG_FS;
-extern USBD_HandleTypeDef hUsbDeviceHS;
+extern USBD_HandleTypeDef hUsbDeviceFS;
 extern TIM_HandleTypeDef htim1;
 
 // flags

@@ -5,7 +5,7 @@
 UART_HandleTypeDef huart3;
 SPI_HandleTypeDef hspi4;
 SD_HandleTypeDef hsd1;
-USBD_HandleTypeDef hUsbDeviceHS;
+USBD_HandleTypeDef hUsbDeviceFS;
 TIM_HandleTypeDef htim1;
 
 // flags
