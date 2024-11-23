@@ -6,192 +6,17 @@
 // 1.00 - (08.16.20xx)
 
 #include "main.h"
+#include "menu.h"
+#include "tools.h"
 
 // cn de/scramble address in defines
 
-uint32_t Mount_Dump(void)
+uint32_t Mount_SD(void)
 {
   FRESULT fr;
 
   fr = f_mount(&SDFatFs, "0:", 1);
-  if (fr == FR_OK) {
-	fr = f_open(&file, get_dump_filename(), FA_CREATE_ALWAYS | FA_WRITE);
-	if (fr == FR_OK) {
-      return 0;
-    }  else return 2;
-  } else return 1;
-}
-
-uint32_t Mount_Prog(void)
-{
-  FRESULT fr;
-
-  fr = f_mount(&SDFatFs, "0:", 1);
-  if (fr == FR_OK) {
-	fr = f_open(&file, get_prog_filename(), FA_READ);
-	if (fr == FR_OK) {
-      return 0;
-    }  else return 2;
-  } else return 1;
-}
-
-void doGpioInit(void)
-{
-  switch (cur_chip) {
-    case CHIP_P:
-      P_GPIO_Init();
-      break;
-    case CHIP_S:
-    case CHIP_M:
-      SM_GPIO_Init();
-      break;
-    case CHIP_C:
-    case CHIP_V:
-      CV_GPIO_Init();
-      break;
-    default:
-      break;
-  }
-}
-void doTest(void)
-{
-  if (flg_test) return;
-
-  switch (cur_chip) {
-    case CHIP_P:
-      P_Test();
-      break;
-    case CHIP_S:
-    case CHIP_M:
-      SM_Test();
-      break;
-    case CHIP_C:
-    case CHIP_V:
-      CV_Test();
-      break;
-    default:
-      break;
-  }
-  
-  flg_test = 1;
-}
-
-void doDump(void)
-{
-  UINT bw;
-
-  switch (cur_chip) {
-    case CHIP_P:
-      P_Dump();
-      break;
-    case CHIP_S:
-    case CHIP_M:
-      SM_Dump();
-      break;
-    case CHIP_C:
-    case CHIP_V:
-      CV_Dump();
-      break;
-    default:
-      break;
-  }
-
-  if (buffer_pos == 0) {
-    f_write(&file, &buffer, BUFFER_SIZE, &bw);
-    if (bw != BUFFER_SIZE) {
-      f_close(&file);
-      error = 1;
-      cur_menu = MENU_ERROR;
-      LCD_Clear();
-    }
-  }
-  if (address >= get_end_address()) {
-    f_close(&file);
-    cur_menu = MENU_DONE;
-    LCD_Clear();
-    return;
-  }
-}
-
-void doProg(void)
-{
-  UINT br;
-
-  if (flg_seek) {
-    f_lseek(&file, address * 4);
-	flg_seek = 0;
-  }
-
-  if (buffer_pos == 0) {
-    f_read(&file, &buffer, BUFFER_SIZE, &br);
-    if (br != BUFFER_SIZE) {
-      f_close(&file);
-      error = 1;
-      cur_menu = MENU_ERROR;
-      LCD_Clear();
-    }
-  }
-
-  switch (cur_chip) {
-    case CHIP_P:
-      P_Prog();
-      break;
-    case CHIP_S:
-    case CHIP_M:
-      SM_Prog();
-      break;
-    case CHIP_C:
-    case CHIP_V:
-      CV_Prog();
-      break;
-    default:
-      break;
-  }
-
-  if (address >= get_end_address()) {
-    f_close(&file);
-    cur_menu = MENU_DONE;
-    LCD_Clear();
-    return;
-  }
-}
-
-void doVeri(void)
-{
-  UINT br;
-
-  if (buffer_pos == 0) {
-    f_read(&file, &buffer, BUFFER_SIZE, &br);
-    if (br != BUFFER_SIZE) {
-      f_close(&file);
-      error = 1;
-      cur_menu = MENU_ERROR;
-      LCD_Clear();
-    }
-  }
-
-  switch (cur_chip) {
-    case CHIP_P:
-      P_Veri();
-      break;
-    case CHIP_S:
-    case CHIP_M:
-      SM_Veri();
-      break;
-    case CHIP_C:
-    case CHIP_V:
-      CV_Veri();
-      break;
-    default:
-      break;
-  }
-
-  if (address >= get_end_address()) {
-    f_close(&file);
-    cur_menu = MENU_DONE;
-    LCD_Clear();
-    return;
-  }
+  return fr;
 }
 
 int main(void)
@@ -219,7 +44,7 @@ int main(void)
   /* Initialize LED/BTN  */
   BSP_LED_Init(LED_BLUE);
   BSP_PB_Init(BUTTON_BRD,  BUTTON_MODE_GPIO);
-  
+
   /* Initialize Timers */
   MX_TIM1_Init();
 
@@ -243,138 +68,47 @@ int main(void)
   /* Initialize LCD */
   LCD_Init();
   LCD_Clear();
-  
-  /* Infinite loop */
-  while (1)
-  {
-    if (flag_button & FLAG_BTN_BRD)
-    {
-      flag_button &= ~FLAG_BTN_BRD;
-      switch (cur_menu) {
-        case MENU_CSEL:
-          if (++cur_chip > CHIP_V) {
-            cur_chip = CHIP_P;
-          }
+
+  FRESULT fr = f_mount(&SDFatFs, "0:", 1);
+
+  if(fr != FR_OK) {
+    LCD_xyprintf(0,0,0, "SD Card error %d:\n%s\n", fr, get_fresult_friendlyname(fr));
+    waitButton();
+  }
+  uint32_t saved_addr;
+  chip_t saved_chiptype;
+  char saved_filename[80];
+
+  if(loadProgress(&saved_addr, saved_filename, &saved_chiptype) == FR_OK) {
+    LCD_Clear();
+    LCD_printf(2, "Saved Progress found\n");
+    LCD_printf(0, "A:%08lx %s\n", saved_addr, CHIP_NAMES[saved_chiptype]);
+    LCD_printf(0, "<%s>\n", saved_filename);
+    LCD_printf(0, "Resume?\n");
+    if(waitYesNo()) {
+      switch(saved_chiptype) {
+        case CHIP_C:
+        case CHIP_V:
+          CV_Program_Internal(saved_filename, saved_addr, saved_chiptype);
           break;
-        case MENU_MSEL:
-          if (++cur_mode > MODE_VERI) {
-            cur_mode = MODE_TEST;
-          }
-          break;
-        case MENU_PROG:
-        case MENU_DUMP:
-        case MENU_VERI:
-          // do nothing
-          break;
-        case MENU_TEST:
-        case MENU_DONE:
-        case MENU_ERROR:
-          cur_menu = MENU_MSEL;
-          LCD_Clear();
-          break;
+        case CHIP_P:
+          P_Program_Internal(saved_filename, saved_addr);
         default:
+          LCD_printf(0, "Chip Type %s\nnot implemented\n",CHIP_NAMES[saved_chiptype]);
+          waitButton();
           break;
       }
-    }
-
-    if (flag_button & FLAG_BTN_BRD_LONG)
-    {
-      flag_button &= ~FLAG_BTN_BRD_LONG;
-      switch (cur_menu) {
-        case MENU_CSEL:
-          cur_menu = MENU_MSEL;
-          LCD_Clear();
-		  doGpioInit();
-          break;
-        case MENU_MSEL:
-          switch (cur_mode) {
-            case MODE_TEST:
-              cur_menu = MENU_TEST;
-              LCD_Clear();
-              break;
-            case MODE_DUMP:
-              if (Mount_Dump() == 0) {
-                cur_menu = MENU_DUMP;
-                LCD_Clear();
-              }
-			  else {
-				error = 1;
-                cur_menu = MENU_ERROR;
-                LCD_Clear();
-			  }
-              break;
-            case MODE_PROG:
-              if (Mount_Prog() == 0) {
-                cur_menu = MENU_PROG;
-                LCD_Clear();
-              }
-			  else {
-				error = 1;
-                cur_menu = MENU_ERROR;
-                LCD_Clear();
-			  }
-              break;
-            case MODE_VERI:
-              if (Mount_Prog() == 0) {
-                cur_menu = MENU_VERI;
-                LCD_Clear();
-              }
-			  else {
-				error = 1;
-                cur_menu = MENU_ERROR;
-                LCD_Clear();
-			  }
-              break;
-            default:
-              break;
-          }
-          flg_test   = 0;
-          buffer_pos = 0;
-          address = 0;
-          sector  = 0;
-          test    = 0;
-          error   = 0;
-          break;
-        case MENU_PROG:
-        case MENU_DUMP:
-        case MENU_VERI:
-          f_close(&file);
-          cur_menu = MENU_MSEL;
-          LCD_Clear();
-          break;
-        case MENU_TEST:
-        case MENU_DONE:
-        case MENU_ERROR:
-          cur_menu = MENU_MSEL;
-          LCD_Clear();
-          break;
-        default:
-          break;
+    } else {
+      LCD_Clear();
+      LCD_printf(0, "Delete current saved\nprogress?\n\n\n");
+      if(waitYesNo()) {
+        f_unlink(PROG_SAVE_FILE);
       }
     }
+  }
 
-    switch (cur_menu) {
-      case MENU_TEST:
-        doTest();
-        break;
-      case MENU_DUMP:
-        doDump();
-        break;
-      case MENU_PROG:
-        doProg();
-        break;
-      case MENU_VERI:
-        doVeri();
-        break;
-      default:
-        break;
-    }
-
-    if (flag_lcddraw) {
-      flag_lcddraw = 0;
-      doLCD();
-      LCD_Draw();
-    }
+  while(1) {
+    menu_select(MENU_TOP);
   }
 }
 
