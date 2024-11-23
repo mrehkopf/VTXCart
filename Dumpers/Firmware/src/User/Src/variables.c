@@ -16,9 +16,6 @@ volatile uint32_t flag_button;
 // FatFs
 char SDPath[4];
 FATFS SDFatFs;
-FIL file;
-uint8_t winbuf[FF_MAX_SS]                SRAM_BUFFER;
-uint8_t filbuf[FF_MAX_SS]                SRAM_BUFFER;
 
 // lcd
 uint8_t lcd_cache[2][LCD_WIDTH+2];

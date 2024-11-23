@@ -21,9 +21,6 @@ extern volatile uint32_t flag_button;
 // FatFs
 extern char SDPath[4];
 extern FATFS SDFatFs;
-extern FIL file;
-extern uint8_t winbuf[FF_MAX_SS];
-extern uint8_t filbuf[FF_MAX_SS];
 
 // lcd
 extern uint8_t lcd_cache[2][LCD_WIDTH+2];
