@@ -229,6 +229,10 @@ int main(void)
 
   /* Init USB device Library */
   BSP_USB_DEVICE_Init();
+  /* make USB work with __WFI() in main loop */
+  __HAL_RCC_USB_OTG_FS_ULPI_CLK_SLEEP_DISABLE();
+  __HAL_RCC_USB_OTG_FS_CLK_SLEEP_ENABLE();
+
 
   /* Initialize SPI */
   MX_SPI4_Init();

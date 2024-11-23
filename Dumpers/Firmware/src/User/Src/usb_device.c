@@ -20,12 +20,27 @@ void USB_printf(const char *format, ...)
   va_list args;
   uint32_t length;
   uint32_t timer;
+  uint8_t tmpbuf[sizeof UserTxBufferFS];
 
   timer = HAL_GetTick();
   va_start(args, format);
-  length = vsnprintf((char *)UserTxBufferHS, APP_TX_DATA_SIZE, (char *)format, args);
+  length = vsnprintf((char *)tmpbuf, APP_TX_DATA_SIZE, (char *)format, args);
   va_end(args);
-  UserTxBufferHS[length++] = 0x0A;
+
+  uint8_t *tgt = UserTxBufferFS;
+  int count = 0;
+  for(uint8_t *ch = tmpbuf; *ch; ch++) {
+    if(*ch == '\n') {
+      *tgt++ = '\r';
+      length++;
+    }
+    *tgt++ = *ch;
+    count++;
+    if(count >= sizeof(UserTxBufferFS)) {
+      break;
+    }
+  }
+
   while(HAL_GetTick() - timer < 10)
   {
     if (CDC_Transmit_FS(UserTxBufferFS, length) == USBD_OK)
