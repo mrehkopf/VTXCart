@@ -119,6 +119,17 @@
 #define AXI_BUFFER __attribute__((section(".axi"))) __attribute__ ((aligned (4)))
 #define D2SRAM_BUFFER __attribute__((section(".d2sram"))) __attribute__ ((aligned (4)))
 
+#define GPIO_MODE_OUT(reg,b)  reg->MODER = (reg->MODER & ~(3 << (2*b))) | (1 << (2*b))
+#define GPIO_MODE_IN(reg,b)   reg->MODER = (reg->MODER & ~(3 << (2*b)))
+
+#define GPIO_PULL_UP(reg,b)   reg->PUPDR = (reg->PUPDR & ~(3 << (2*b))) | (1 << (2*b))
+#define GPIO_PULL_DOWN(reg,b) reg->PUPDR = (reg->PUPDR & ~(3 << (2*b))) | (2 << (2*b))
+
+#define DATADIR_OUT() GPIOA -> MODER = ((GPIOA -> MODER & ~(0xffff)) | 0x5555); \
+                      GPIOC -> MODER = ((GPIOC -> MODER & ~(0xffff)) | 0x5555)
+
+#define DATADIR_IN()  GPIOA -> MODER = (GPIOA -> MODER & ~(0xffff)); \
+                      GPIOC -> MODER = (GPIOC -> MODER & ~(0xffff))
 
 #ifdef __cplusplus
 }
