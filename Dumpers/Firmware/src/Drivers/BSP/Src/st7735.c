@@ -700,7 +700,7 @@ int32_t ST7735_DrawBitmap(ST7735_Object_t *pObj, uint32_t Xpos, uint32_t Ypos, u
   return ret;
 }
 
-uint8_t pdata[320] SRAM_BUFFER;
+uint8_t pdata[320];
 
 /**
  * @brief  Draws a full RGB rectangle

@@ -27,7 +27,7 @@ uint32_t scroll_pos[2];
 uint32_t scroll_delay[2];
 
 // uart
-uint8_t UARTTxBuffer[UART_BUFFER_SIZE] SRAM_BUFFER;
+uint8_t UARTTxBuffer[UART_BUFFER_SIZE] ALIGN(4);
 uint32_t UARTTxBuffer_head, UARTTxBuffer_tail, UARTTxBuffer_len;
 
 // menu
@@ -40,7 +40,7 @@ uint32_t timLcdCnt;
 uint32_t timBtnCnt[BUTTONn];
 
 // dump buffer
-uint8_t buffer [BUFFER_SIZE] SRAM_BUFFER;
+uint16_t buffer [BUFFER_SIZE] AXI_BUFFER;
 uint32_t buffer_pos;
 
 // other

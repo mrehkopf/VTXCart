@@ -123,7 +123,7 @@ static int32_t lcd_recvdata(uint8_t *pdata, uint32_t length)
 
 
 extern const uint16_t font32 [];
-uint16_t lcd_buf[32*16] SRAM_BUFFER;
+uint16_t lcd_buf[FONT_WIDTH*FONT_HEIGHT] ALIGN(4);
 uint8_t prev_lm, prev_attr[2];
 
 void LCD_ShowChar(uint16_t x, uint16_t y, uint8_t num)

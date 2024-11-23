@@ -110,7 +110,11 @@
 // dump buffer
 #define BUFFER_SIZE 0x10000
 
-#define SRAM_BUFFER __attribute__((section(".sram"))) __attribute__ ((aligned (4)))
+#define ALIGN(x) __attribute__((aligned(x)))
+
+#define AXI_BUFFER __attribute__((section(".axi"))) __attribute__ ((aligned (4)))
+#define D2SRAM_BUFFER __attribute__((section(".d2sram"))) __attribute__ ((aligned (4)))
+
 
 #ifdef __cplusplus
 }

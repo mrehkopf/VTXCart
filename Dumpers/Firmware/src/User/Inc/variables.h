@@ -32,7 +32,7 @@ extern uint32_t scroll_pos[2];
 extern uint32_t scroll_delay[2];
 
 // uart
-extern uint8_t UARTTxBuffer[UART_BUFFER_SIZE] SRAM_BUFFER;
+extern uint8_t UARTTxBuffer[UART_BUFFER_SIZE] ALIGN(4);
 extern uint32_t UARTTxBuffer_head, UARTTxBuffer_tail, UARTTxBuffer_len;
 
 // menu
@@ -44,8 +44,8 @@ extern uint32_t cur_mode;
 extern uint32_t timLcdCnt;
 extern uint32_t timBtnCnt[BUTTONn];
 
-// dump buffer
-extern uint8_t buffer [BUFFER_SIZE] SRAM_BUFFER;
+// dump/flash sector buffer
+extern uint16_t buffer [BUFFER_SIZE] AXI_BUFFER;
 extern uint32_t buffer_pos;
 
 // other

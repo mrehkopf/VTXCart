@@ -41,11 +41,14 @@ __ROM_SIZE = 0x00020000;
     <o1> RAM Size (in Bytes) <0x0-0xFFFFFFFF:8>
   </h>
  -----------------------------------------------------------------------------*/
-__RAM_BASE = 0x20000000;
-__RAM_SIZE = 0x00020000;
+__DTCM_BASE = 0x20000000;
+__DTCM_SIZE = 0x20000;
 
-__RAM2_BASE = 0x24000000;
-__RAM2_SIZE = 0x00020000;
+__AXI_BASE = 0x24000000;
+__AXI_SIZE = 0x80000;
+
+__D2SRAM_BASE = 0x30000000;
+__D2SRAM_SIZE = 0x48000;
 
 /*--------------------- Stack / Heap Configuration ----------------------------
   <h> Stack / Heap Configuration
@@ -53,8 +56,8 @@ __RAM2_SIZE = 0x00020000;
     <o1> Heap Size (in Bytes) <0x0-0xFFFFFFFF:8>
   </h>
   -----------------------------------------------------------------------------*/
-__STACK_SIZE = 0x00000400;
-__HEAP_SIZE  = 0x00001000;
+__STACK_SIZE = 0x800;
+__HEAP_SIZE  = 0x1000;
 
 /*
  *-------------------- <<< end of configuration section >>> -------------------
@@ -62,9 +65,10 @@ __HEAP_SIZE  = 0x00001000;
 
 MEMORY
 {
-  FLASH (rx)  : ORIGIN = __ROM_BASE, LENGTH = __ROM_SIZE
-  RAM   (rwx) : ORIGIN = __RAM_BASE, LENGTH = __RAM_SIZE
-  RAM2  (rwx) : ORIGIN = __RAM2_BASE, LENGTH = __RAM2_SIZE
+  FLASH  (rx)  : ORIGIN = __ROM_BASE, LENGTH = __ROM_SIZE
+  DTCM   (rwx) : ORIGIN = __DTCM_BASE, LENGTH = __DTCM_SIZE
+  AXI    (rwx) : ORIGIN = __AXI_BASE, LENGTH = __AXI_SIZE
+  D2SRAM (rwx) : ORIGIN = __D2SRAM_BASE, LENGTH = __D2SRAM_SIZE
 }
 
 /* Linker script to place sections and symbol values. Should be used together
@@ -177,8 +181,10 @@ SECTIONS
     /* Add each additional bss section here */
     LONG (__bss_start__)
     LONG ((__bss_end__ - __bss_start__) / 4)
-    LONG (__sram_start__)
-    LONG ((__sram_end__ - __sram_start__) / 4)
+    LONG (__axi_start__)
+    LONG ((__axi_end__ - __axi_start__) / 4)
+    LONG (__d2sram_start__)
+    LONG ((__d2sram_end__ - __d2sram_start__) / 4)
     __zero_table_end__ = .;
   } > FLASH
 
@@ -221,7 +227,7 @@ SECTIONS
     /* All data end */
     __data_end__ = .;
 
-  } > RAM
+  } > DTCM
 
   /*
    * Secondary data section, optional
@@ -240,7 +246,7 @@ SECTIONS
     *(COMMON)
     . = ALIGN(4);
     __bss_end__ = .;
-  } > RAM AT > RAM
+  } > DTCM AT > DTCM
 
   .heap (COPY) :
   {
@@ -250,30 +256,39 @@ SECTIONS
     . = . + __HEAP_SIZE;
     . = ALIGN(8);
     __HeapLimit = .;
-  } > RAM
+  } > DTCM
 
-  .stack (ORIGIN(RAM) + LENGTH(RAM) - __STACK_SIZE) (COPY) :
+  .stack (ORIGIN(DTCM) + LENGTH(DTCM) - __STACK_SIZE) (COPY) :
   {
     . = ALIGN(8);
     __StackLimit = .;
     . = . + __STACK_SIZE;
     . = ALIGN(8);
     __StackTop = .;
-  } > RAM
+  } > DTCM
 
-  .sram (NOLOAD) :
+  .axi (NOLOAD) :
   {
     . = ALIGN(4);
-    __sram_start__ = .;
-    *(.sram)
-    *(.sram.*)
+    __axi_start__ = .;
+    *(.axi)
+    *(.axi.*)
     . = ALIGN(4);
-    __sram_end__ = .;
+    __axi_end__ = .;
+  } > AXI
 
-  } > RAM2
+  .d2sram (NOLOAD) :
+  {
+    . = ALIGN(4);
+    __d2sram_start__ = .;
+    *(.d2sram)
+    *(.d2sram.*)
+    . = ALIGN(4);
+    __d2sram_end__ = .;
+  } > D2SRAM
 
   PROVIDE(__stack = __StackTop);
 
   /* Check if data + heap + stack exceeds RAM limit */
-  ASSERT(__StackLimit >= __HeapLimit, "region RAM overflowed with stack")
+  ASSERT(__StackLimit >= __HeapLimit, "region DTCM (RAM) overflowed with stack")
 }
