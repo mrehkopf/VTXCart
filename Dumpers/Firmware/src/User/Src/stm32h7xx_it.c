@@ -2,6 +2,38 @@
 #include "stm32h7xx_it.h"
 #include "stm32h7xx_ll_dma.h"
 
+
+/*
+   LED error blink codes:
+   ======================
+
+   1x short, 1x long: NMI Exception
+   2x short, 1x long: Hardfault
+   3x short, 1x long: MemManage
+   4x short, 1x long: BusFault
+   5x short, 1x long: UsageFault
+
+   32 blinks, short/long combined:
+     -> address of caller of ErrorHandler function,
+        MSB->LSB, short=0, long=1
+ */
+
+void Blink_Handler(uint32_t n, int count) {
+  __disable_irq();
+  BSP_LED_Init(LED_BLUE);
+  while(1) {
+    for(int i=count; i>=0; i--) {
+      int ontime = (n & (1<<i)) ? 17000000 : 3000000;
+      int offtime = 20000000 - ontime;
+      BSP_LED_On(LED_BLUE);
+      for(volatile int j=0; j<ontime; j++);
+      BSP_LED_Off(LED_BLUE);
+      for(volatile int j=0; j<offtime; j++);
+    }
+    for(volatile int j=0; j<60000000; j++);
+  }
+}
+
 /******************************************************************************/
 /*            Cortex-M7 Processor Exceptions Handlers                         */
 /******************************************************************************/
@@ -13,8 +45,7 @@
   */
 void NMI_Handler(void)
 {
-  /* Go to infinite loop when NMI exception occurs */
-  Error_Handler(1);
+  Blink_Handler(1, 2);
 }
 
 /**
@@ -24,8 +55,7 @@ void NMI_Handler(void)
   */
 void HardFault_Handler(void)
 {
-  /* Go to infinite loop when Hard Fault exception occurs */
-  Error_Handler(1);
+  Blink_Handler(1, 3);
 }
 
 /**
@@ -35,8 +65,7 @@ void HardFault_Handler(void)
   */
 void MemManage_Handler(void)
 {
-  /* Go to infinite loop when Memory Manage exception occurs */
-  Error_Handler(1);
+  Blink_Handler(1, 4);
 }
 
 /**
@@ -46,8 +75,7 @@ void MemManage_Handler(void)
   */
 void BusFault_Handler(void)
 {
-  /* Go to infinite loop when Bus Fault exception occurs */
-  Error_Handler(1);
+  Blink_Handler(1, 5);
 }
 
 /**
@@ -57,8 +85,7 @@ void BusFault_Handler(void)
   */
 void UsageFault_Handler(void)
 {
-  /* Go to infinite loop when Usage Fault exception occurs */
-  Error_Handler(1);
+  Blink_Handler(1, 6);
 }
 
 /**
@@ -113,12 +140,13 @@ void SysTick_Handler(void)
   */
 void Error_Handler(uint32_t condition)
 {
+  uint32_t retaddr;
+  __asm ("MOV %[result], r14"
+      : [result] "=r" (retaddr)
+    );
   if(condition)
   {
-    __disable_irq();
-    BSP_LED_Init(LED_BLUE);
-    BSP_LED_On(LED_BLUE);
-    while(1) { ; } /* Blocking on error */
+    Blink_Handler(retaddr, 32);
   }
 }
 
