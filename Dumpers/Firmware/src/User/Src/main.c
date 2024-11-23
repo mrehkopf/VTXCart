@@ -381,20 +381,26 @@ int main(void)
 // Main (0.01s) Timer
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
+  static uint32_t timBtnCnt[BUTTONn] = { 0 };
+
   if(htim->Instance!=TIM1) return;
   
   if (++timLcdCnt >= 20) {
     timLcdCnt = 0;
     flag_lcddraw = 1;
   }
-  if (BSP_PB_GetState(BUTTON_BRD) == GPIO_PIN_SET)
+
+  if (BSP_PB_GetState(BUTTON_BRD) == GPIO_PIN_SET) {
     timBtnCnt[BUTTON_BRD]++;
-  else {
-    if (timBtnCnt[BUTTON_BRD] >= 50) // BTN: 0.5 s.
+    if (!(flag_button & FLAG_BTN_PRESSED) && timBtnCnt[BUTTON_BRD] >= 35) { // BTN: 0.35 s.
       flag_button |= FLAG_BTN_BRD_LONG;
-    else
-    if (timBtnCnt[BUTTON_BRD] >= 10) // BTN: 0.1 s.
+      flag_button |= FLAG_BTN_PRESSED;
+    }
+  } else {
+    if (!(flag_button & FLAG_BTN_PRESSED) && timBtnCnt[BUTTON_BRD] >= 7) { // BTN: 0.07 s.
       flag_button |= FLAG_BTN_BRD;
+    }
+    flag_button &= ~FLAG_BTN_PRESSED;
     timBtnCnt[BUTTON_BRD] = 0;
   }
 }

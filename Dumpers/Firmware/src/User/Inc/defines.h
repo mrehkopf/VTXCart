@@ -76,6 +76,7 @@
 // flags
 #define FLAG_BTN_BRD       (1 << 0)
 #define FLAG_BTN_BRD_LONG  (1 << 1)
+#define FLAG_BTN_PRESSED   (1 << 2)
 
 // uart
 #define UART_BUFFER_SIZE 8192
