@@ -46,108 +46,107 @@ const uint16_t lcd_palette[4][16] = {
 };
 
 ST7735_IO_t st7735_pIO = {
-	lcd_init,
-	NULL,
-	0,
-	lcd_writereg,
-	lcd_readreg,
-	lcd_senddata,
-	lcd_recvdata,
-	lcd_gettick};
+    lcd_init,
+    NULL,
+    0,
+    lcd_writereg,
+    lcd_readreg,
+    lcd_senddata,
+    lcd_recvdata,
+    lcd_gettick};
 
 ST7735_Object_t st7735_pObj;
 
 static int32_t lcd_init(void)
 {
-	int32_t result = ST7735_OK;
-	return result;
+    int32_t result = ST7735_OK;
+    return result;
 }
 
 static int32_t lcd_gettick(void)
 {
-	return HAL_GetTick();
+    return HAL_GetTick();
 }
 
 static int32_t lcd_writereg(uint8_t reg, uint8_t *pdata, uint32_t length)
 {
-	int32_t result;
-	LCD_CS_RESET;
-	LCD_RS_RESET;
-	result = HAL_SPI_Transmit(SPI_Drv, &reg, 1, 100);
-	LCD_RS_SET;
-	if (length > 0)
-		result += HAL_SPI_Transmit(SPI_Drv, pdata, length, 500);
-	LCD_CS_SET;
-	if (result > 0)
-	{
-		result = -1;
-	}
-	else
-	{
-		result = 0;
-	}
-	return result;
+    int32_t result;
+    LCD_CS_RESET;
+    LCD_RS_RESET;
+    result = HAL_SPI_Transmit(SPI_Drv, &reg, 1, 100);
+    LCD_RS_SET;
+    if (length > 0)
+        result += HAL_SPI_Transmit(SPI_Drv, pdata, length, 500);
+    LCD_CS_SET;
+    if (result > 0)
+    {
+        result = -1;
+    }
+    else
+    {
+        result = 0;
+    }
+    return result;
 }
 
 static int32_t lcd_readreg(uint8_t reg, uint8_t *pdata)
 {
-	int32_t result;
-	LCD_CS_RESET;
-	LCD_RS_RESET;
+    int32_t result;
+    LCD_CS_RESET;
+    LCD_RS_RESET;
 
-	result = HAL_SPI_Transmit(SPI_Drv, &reg, 1, 100);
-	LCD_RS_SET;
-	result += HAL_SPI_Receive(SPI_Drv, pdata, 1, 500);
-	LCD_CS_SET;
-	if (result > 0)
-	{
-		result = -1;
-	}
-	else
-	{
-		result = 0;
-	}
-	return result;
+    result = HAL_SPI_Transmit(SPI_Drv, &reg, 1, 100);
+    LCD_RS_SET;
+    result += HAL_SPI_Receive(SPI_Drv, pdata, 1, 500);
+    LCD_CS_SET;
+    if (result > 0)
+    {
+        result = -1;
+    }
+    else
+    {
+        result = 0;
+    }
+    return result;
 }
 
 static int32_t lcd_senddata(uint8_t *pdata, uint32_t length)
 {
-	int32_t result;
-	LCD_CS_RESET;
-	// LCD_RS_SET;
-	result = HAL_SPI_Transmit(SPI_Drv, pdata, length, 100);
-	LCD_CS_SET;
-	if (result > 0)
-	{
-		result = -1;
-	}
-	else
-	{
-		result = 0;
-	}
-	return result;
+    int32_t result;
+    LCD_CS_RESET;
+    // LCD_RS_SET;
+    result = HAL_SPI_Transmit(SPI_Drv, pdata, length, 100);
+    LCD_CS_SET;
+    if (result > 0)
+    {
+        result = -1;
+    }
+    else
+    {
+        result = 0;
+    }
+    return result;
 }
 
 static int32_t lcd_recvdata(uint8_t *pdata, uint32_t length)
 {
-	int32_t result;
-	LCD_CS_RESET;
-	// LCD_RS_SET;
-	result = HAL_SPI_Receive(SPI_Drv, pdata, length, 500);
-	LCD_CS_SET;
-	if (result > 0)
-	{
-		result = -1;
-	}
-	else
-	{
-		result = 0;
-	}
-	return result;
+    int32_t result;
+    LCD_CS_RESET;
+    // LCD_RS_SET;
+    result = HAL_SPI_Receive(SPI_Drv, pdata, length, 500);
+    LCD_CS_SET;
+    if (result > 0)
+    {
+        result = -1;
+    }
+    else
+    {
+        result = 0;
+    }
+    return result;
 }
 
 
-extern const uint16_t font32 [];
 uint16_t lcd_buf[FONT_WIDTH*FONT_HEIGHT] ALIGN(4);
 uint8_t prev_lm, prev_attr[2];
 
