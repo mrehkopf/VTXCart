@@ -381,13 +381,17 @@ int main(void)
 // Main (0.01s) Timer
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
+  // timer
+  static uint32_t timLcdCnt = 0;
   static uint32_t timBtnCnt[BUTTONn] = { 0 };
 
   if(htim->Instance!=TIM1) return;
-  
-  if (++timLcdCnt >= 20) {
+
+  ticks++;
+
+  if (++timLcdCnt >= LCD_REFRESH_INTERVAL) {
     timLcdCnt = 0;
-    flag_lcddraw = 1;
+    LCD_UpdateText();
   }
 
   if (BSP_PB_GetState(BUTTON_BRD) == GPIO_PIN_SET) {
