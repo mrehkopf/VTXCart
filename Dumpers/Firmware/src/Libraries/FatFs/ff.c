@@ -22,7 +22,6 @@
 #include <string.h>
 #include "ff.h"			/* Declarations of FatFs API */
 #include "diskio.h"		/* Declarations of device I/O functions */
-#include "defines.h"	// VTX
 
 
 /*--------------------------------------------------------------------------
@@ -520,9 +519,9 @@ static const BYTE LfnOfs[] = {1,3,5,7,9,14,16,18,20,22,24,28,30};	/* FAT: Offset
 
 #if FF_USE_LFN == 1		/* LFN enabled with static working buffer */
 #if FF_FS_EXFAT
-static BYTE	DirBuf[MAXDIRB(FF_MAX_LFN)] SRAM_BUFFER; // VTX /* Directory entry block scratchpad buffer */
+static BYTE	DirBuf[MAXDIRB(FF_MAX_LFN)]; /* Directory entry block scratchpad buffer */
 #endif
-static WCHAR LfnBuf[FF_MAX_LFN + 1] SRAM_BUFFER; // VTX /* LFN working buffer */
+static WCHAR LfnBuf[FF_MAX_LFN + 1];
 #define DEF_NAMBUF
 #define INIT_NAMBUF(fs)
 #define FREE_NAMBUF()
@@ -802,9 +801,7 @@ static DWORD tchar2uni (	/* Returns a character in UTF-16 encoding (>=0x10000 on
 	return uc;
 }
 
-
 /* Store a Unicode char in defined API encoding */
-#if FF_LFN_UNICODE != 0
 static UINT put_utf (	/* Returns number of encoding units written (0:buffer overflow or wrong encoding) */
 	DWORD chr,	/* UTF-16 encoded character (Surrogate pair if >=0x10000) */
 	TCHAR* buf,	/* Output buffer */
@@ -887,7 +884,6 @@ static UINT put_utf (	/* Returns number of encoding units written (0:buffer over
 	return 1;
 #endif
 }
-#endif
 #endif	/* FF_USE_LFN */
 
 
